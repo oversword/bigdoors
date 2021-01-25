@@ -429,6 +429,8 @@ function bigdoors.register(basename, basedef)
 		local name = basename..size_string
 		def.drop = name
 		def.door.name = name
+		
+		local on_place = on_place_size(name, size, def)
 
 		-- Use inventory image for item, and remove from def
 		minetest.register_craftitem(":" .. name, {
@@ -461,7 +463,6 @@ function bigdoors.register(basename, basedef)
 		local after_dig_node = after_dig_node_size(size)
 		local on_blast_unprotected = on_blast_unprotected_size(size)
 		local on_destruct = on_destruct_size(size)
-		local on_place = on_place_size(name, size, def)
 
 		def.after_dig_node = after_dig_node
 		def.on_destruct = on_destruct
