@@ -398,7 +398,6 @@ function bigdoors.register(basename, basedef)
 	basedef.walkable = true
 	basedef.is_ground_content = false
 	basedef.buildable_to = false
-	basedef.groups.not_in_creative_inventory = 1
 	basedef.groups.door = 1
 
 
@@ -429,7 +428,7 @@ function bigdoors.register(basename, basedef)
 		local name = basename..size_string
 		def.drop = name
 		def.door.name = name
-		
+
 		local on_place = on_place_size(name, size, def)
 
 		-- Use inventory image for item, and remove from def
@@ -486,6 +485,10 @@ function bigdoors.register(basename, basedef)
 		local defb = by_value(def)
 		local defc = by_value(def)
 		local defd = by_value(def)
+
+		defb.groups.not_in_creative_inventory = 1
+		defc.groups.not_in_creative_inventory = 1
+		defd.groups.not_in_creative_inventory = 1
 
 		local adbox = by_value(normalbox)
 		local bcbox = by_value(normalbox)
