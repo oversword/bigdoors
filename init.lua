@@ -141,10 +141,54 @@ local function remove_door_surroundings(pos, size, pair_pos, node)
 	end
 end
 
+
+
+local function on_rightclick(pos, node, clicker, itemstack, pointed_thing)
+	-- Toggle door open/close on right click
+	doors.door_toggle(pos, node, clicker)
+	return itemstack
+end
+
+local function on_rotate(pos, node, user, mode, new_param2)
+	-- Deny rotation
+	return false
+end
+
 function bigdoors.register(basename, basedef)
 	if not basename:find(":") then
 		basename = "bigdoors:" .. basename
 	end
+
+
+
+	def.drawtype = "mesh"
+	def.paramtype = "light"
+	def.paramtype2 = "facedir"
+	def.sunlight_propagates = true
+	def.walkable = true
+	def.is_ground_content = false
+	def.buildable_to = false
+	def.groups.not_in_creative_inventory = 1
+	def.groups.door = 1
+
+
+	if not def.sounds then
+		def.sounds = default.node_sound_wood_defaults()
+	end
+
+	if not def.sound_open then
+		def.sound_open = "doors_door_open"
+	end
+
+	if not def.sound_close then
+		def.sound_close = "doors_door_close"
+	end
+	if not def.on_rightclick then
+		def.on_rightclick = on_rightclick
+	end
+	def.on_rotate = on_rotate
+
+
 	for size_string, size in pairs(door_sizes) do
 
 	local name = basename..size_string
@@ -332,31 +376,11 @@ function bigdoors.register(basename, basedef)
 	end
 	def.recipe = nil
 
-	if not def.sounds then
-		def.sounds = default.node_sound_wood_defaults()
-	end
-
-	if not def.sound_open then
-		def.sound_open = "doors_door_open"
-	end
-
-	if not def.sound_close then
-		def.sound_close = "doors_door_close"
-	end
-
-	def.groups.not_in_creative_inventory = 1
-	def.groups.door = 1
 	def.drop = name
 	def.door = {
 		name = name,
 		sounds = { def.sound_close, def.sound_open },
 	}
-	if not def.on_rightclick then
-		def.on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
-			doors.door_toggle(pos, node, clicker)
-			return itemstack
-		end
-	end
 	def.after_dig_node = function(pos, node, meta, digger)
 		local pair = meta.fields.pair
 		local pair_pos
@@ -367,9 +391,6 @@ function bigdoors.register(basename, basedef)
 		end
 		remove_door_surroundings(pos, size, pair_pos, node)
 
-	end
-	def.on_rotate = function(pos, node, user, mode, new_param2)
-		return false
 	end
 
 	if def.protected then
@@ -430,14 +451,6 @@ function bigdoors.register(basename, basedef)
 
 		-- minetest.remove_node({x = pos.x, y = pos.y + 1, z = pos.z})
 	end
-
-	def.drawtype = "mesh"
-	def.paramtype = "light"
-	def.paramtype2 = "facedir"
-	def.sunlight_propagates = true
-	def.walkable = true
-	def.is_ground_content = false
-	def.buildable_to = false
 
 	local normalbox = {-1/2,-1/2,-1/2,1/2,3/2,-6/16}
 	normalbox[5] = normalbox[2]+size.height
