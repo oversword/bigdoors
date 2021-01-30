@@ -10,6 +10,7 @@ local door_widths = {10,15,20}
 local door_heights = {20,30,40}
 local door_sizes = {}
 local hidden_sizes = {}
+local replacement_doors = {}
 
 local function craft_size(s)
 	if s == 1.5 then
@@ -113,21 +114,23 @@ local function parse_door_name(name)
 	local sep = string.sub(name, -2,-2)
 	if sep == '_' then -- mode & size
 		local size_string = string.sub(name, -6, -3)
+		local clean_name = string.sub(name, 0, -8)
 		local mode = string.sub(name, -1)
 		return {
 			mode = mode,
 			size_string = size_string,
 			size = string_to_size(size_string),
-			name = string.sub(name, 0, -8),
+			name = clean_name,
 			closed = mode == 'a' or mode == 'b'
 		}
 	else -- just size
 		local size_string = string.sub(name, -4)
+		local clean_name = string.sub(name, 0, -6)
 		return {
 			mode = false,
 			size_string = size_string,
 			size = string_to_size(size_string),
-			name = string.sub(name, 0, -6),
+			name = clean_name,
 			closed = nil
 		}
 	end
@@ -465,6 +468,9 @@ local function on_place (itemstack, placer, pointed_thing)
 
 
 	local name = itemstack:get_name()
+	if replacement_doors[name] then
+		name = replacement_doors[name]
+	end
 	local door = parse_door_name(name)
 	door.dir = placer and minetest.dir_to_facedir(placer:get_look_dir()) or 0
 
@@ -643,19 +649,130 @@ function by_value( t1 )
 	return t2
 end
 
+
+function new_recipe(size, item)
+	local recipe = {}
+	local recipe_row = {}
+	for i=1,size.width,1 do
+		table.insert(recipe_row, item)
+	end
+	for i=1,size.height,1 do
+		table.insert(recipe, recipe_row)
+	end
+	return recipe
+end
+
+function user_size_to_sys(sizes)
+	if not sizes then return end
+	local sys_sizes = {}
+	for _,size in ipairs(sizes) do
+		table.insert(sys_sizes, math.floor(size*10))
+	end
+	return sys_sizes
+end
+
+function size_variations(variations)
+	local valid_sizes = {}
+
+	-- Generate list of all width-height combinations
+	local whcombos = {}
+	local heights = user_size_to_sys(variations.heights) or door_heights
+	local widths = user_size_to_sys(variations.widths) or door_widths
+	for _,h in ipairs(heights) do
+		for _,w in ipairs(widths) do
+			local size = {width=w/10,height=h/10}
+			local size_string = size_to_string(size)
+			whcombos[size_string] = size
+		end
+	end
+
+	-- Use only those defined in sizes
+	local sizecombos = {}
+	if variations.sizes then
+		for _,size in ipairs(variations.sizes) do
+			local size_string = size_to_string(size)
+			if whcombos[size_string] then
+				sizecombos[size_string] = size
+			end
+		end
+	else
+		sizecombos = whcombos
+	end
+
+	-- Use only those that maintain proportions
+	local propcombos = {}
+	if variations.original_proportions then
+		for size_string,size in pairs(sizecombos) do
+			if math.abs((size.width*2)-size.height) < 0.1 then
+				propcombos[size_string] = size
+			end
+		end
+	else
+		propcombos = sizecombos
+	end
+
+	-- Use only existing size combinations
+	for size_string,_ in pairs(propcombos) do
+		if door_sizes[size_string] then
+			valid_sizes[size_string] = door_sizes[size_string]
+		end
+	end
+	return valid_sizes
+end
+
+function print_keys(tab, check)
+	for k,v in pairs(tab) do
+		if (not check) or check(k,v) then
+		-- if type(v) == 'table' then
+			minetest.log("error", k)
+		end
+	end
+end
+
 function bigdoors.register(originalname, config)
 
 	local basedef = minetest.registered_nodes[originalname..'_a']
 	local baseitem = minetest.registered_craftitems[originalname]
 	
-	if not originalname:find(":") then
-		originalname = "bigdoors:" .. originalname
+	if not config then
+		config = {}
 	end
 
-	for size_string, size in pairs(door_sizes) do
+	if config.replace_original and not config.original_recipe then
+		minetest.log("error", "BigDoors: Cannot replace original door ("..originalname..") if original_recipe is not defined. (Recipes cannot be retrieved from the minetest API)")
+		return
+	end
+
+	local base_name = originalname
+	if config.name then
+		base_name = config.name
+	end
+	if not base_name:find(":") then
+		base_name = "bigdoors:" .. base_name
+	end
+
+	local recipe_name = originalname
+	if config.replace_original then
+		recipe_name = base_name..'_1020'
+	end
+	if config.replace_original then
+		replacement_doors[originalname] = base_name..'_1020'
+	end
+
+	local valid_sizes = door_sizes
+	if config.variations then
+		valid_sizes = size_variations(config.variations)
+	end
+
+	if config.replace_original and not valid_sizes["1020"] then
+		minetest.log("error", "BigDoors: Cannot replace original door ("..originalname..") if 1x2 size variation is disallowed")
+		return
+	end
+
+	for size_string, size in pairs(valid_sizes) do
 
 		-- Name
-		local name = originalname..'_'..size_string
+		local name = base_name..'_'..size_string
 
 		-- Create item
 		minetest.register_craftitem(":" .. name, {
@@ -666,36 +783,41 @@ function bigdoors.register(originalname, config)
 		})
 
 		-- Use recipe to create crafts
-		if config.recipe then
-			local recipe = config.recipe[size_string]
-			local output = name
-			if recipe.output then
-				output = output..' '..tostring(recipe.output)
-			end
-			local recipe_obj = recipe
-			if recipe.recipe then
-				recipe_obj = recipe.recipe
-			end
+		if size_string == "1020" and config.replace_original then
 			minetest.register_craft({
-				output = output,
-				recipe = recipe_obj,
+				output = name,
+				recipe = config.original_recipe,
 			})
+		elseif config.recipe then
+			-- TODO: multiple recipes for each size?
+			local recipe = config.recipe[size_string]
+			if recipe then
+				local output = name
+				if recipe.output then
+					output = output..' '..tostring(recipe.output)
+				end
+				local recipe_obj = recipe
+				if recipe.recipe then
+					recipe_obj = recipe.recipe
+				end
+				minetest.register_craft({
+					output = output,
+					recipe = recipe_obj,
+				})
+			end
 		else
-			local recipe = {}
-			local recipe_row = {}
-			for i=1,size.recipe.width,1 do
-				table.insert(recipe_row, originalname)
-			end
-			for i=1,size.recipe.height,1 do
-				table.insert(recipe, recipe_row)
-			end
+			-- TODO: more complex crafts for breaking apart & making from other components? e.g. (1x3)+(1x3)=(2x3)
 			minetest.register_craft({
 				output = name..' '..tostring(size.recipe.output),
-				recipe = recipe,
+				recipe = new_recipe(size.recipe, recipe_name),
 			})
+			if not config.replace_original then
+				minetest.register_craft({
+					output = name..' '..tostring(size.recipe.output),
+					recipe = new_recipe(size.recipe, originalname),
+				})
+			end
 		end
-
-
 
 		local def = table.copy(basedef)
 		def.drop = name
@@ -740,15 +862,49 @@ function bigdoors.register(originalname, config)
 		doors.registered_doors[name .. "_c"] = true
 		doors.registered_doors[name .. "_d"] = true
 	end
+
+	if config.replace_original then
+		-- disable original items
+		local swap_name = base_name..'_1020'
+		minetest.registered_craftitems[originalname] = table.copy(minetest.registered_craftitems[swap_name])
+		minetest.registered_items[originalname] = table.copy(minetest.registered_items[swap_name])
+		minetest.registered_craftitems[originalname].groups.not_in_creative_inventory = 1
+		minetest.registered_items[originalname].groups.not_in_creative_inventory = 1
+		-- replace old doors of this type automatically
+		minetest.register_lbm({
+			name = ":bigdoors:replace_" .. originalname:gsub(":", "_"),
+			nodenames = {originalname.."_a", originalname.."_b", originalname.."_c", originalname.."_d"},
+			action = function(new_pos, node)
+				local new_door = swap_name..string.sub(node.name,-2)
+				local new_node = {name = new_door, param2 = node.param2}
+				minetest.swap_node(new_pos, new_node)
+				local door = parse_door(nil, new_node)
+				local check_nodes = door_occupies(new_pos, door)
+				swap_nodes(check_nodes, door, not door.closed)
+			end
+		})
+	end
+
 end
 
 
 if minetest.get_modpath("doors") ~= nil then
 	bigdoors.register("doors:door_wood", {
-
 	})
 	bigdoors.register("doors:door_steel", {
-
+		name = "testerooney",
+		replace_original = true,
+		original_recipe = {
+			{'default:steel_ingot','default:steel_ingot'},
+			{'default:steel_ingot','default:steel_ingot'},
+			{'default:steel_ingot','default:steel_ingot'},
+		},
+		variations = {
+			widths = {1,1.5},
+			heights = {2,3,4,5},
+			sizes = {{width=1,height=3},{width=1,height=2}},
+			original_proportions = true
+		}
 	})
 	bigdoors.register("doors:door_glass", {
 
