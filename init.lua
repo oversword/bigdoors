@@ -9,4 +9,5 @@ bigdoors.modname = minetest.get_current_modname()
 bigdoors.modpath = minetest.get_modpath(bigdoors.modname)
 
 dofile(bigdoors.modpath .. "/register.lua")
+dofile(bigdoors.modpath .. "/notify.lua")
 dofile(bigdoors.modpath .. "/default-doors.lua")
