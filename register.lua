@@ -822,10 +822,15 @@ function bigdoors.register(originalname, config)
 				})
 			end
 		else
-			-- TODO: more complex crafts for breaking apart & making from other components? e.g. (1x3)+(1x3)=(2x3)
+			-- TODO: more complex crafts for making from other components? e.g. (1x3)+(1x3)=(2x3)
 			minetest.register_craft({
 				output = name..' '..tostring(size.recipe.output),
 				recipe = new_recipe(size.recipe, recipe_name),
+			})
+			minetest.register_craft({
+				type = "shapeless",
+				output = recipe_name..' '..tostring(size.recipe.width*size.recipe.height),
+				recipe = new_recipe({width=size.recipe.output,height=1},name)[1]
 			})
 			if not (config.replace_original or size_string == base_size_string) then
 				minetest.register_craft({
