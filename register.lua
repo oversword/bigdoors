@@ -2,6 +2,11 @@
 -- Load support for MT game translation.
 local S = minetest.get_translator("doors")
 
+local function do_not_move(node_name)
+	if not (minetest.global_exists("mesecon") and mesecon.register_mvps_stopper) then return end
+	mesecon.register_mvps_stopper(node_name)
+end
+
 local door_sizes = {}
 local hidden_sizes = {}
 local replacement_doors = {}
@@ -594,6 +599,7 @@ if bigdoors.debug_hidden_nodes then
 end
 
 minetest.register_node(bigdoors.modname..":hidden", hidden_def) -- doors:hidden has a hitbox, no thanks
+do_not_move(bigdoors.modname..":hidden")
 
 local function hidden_section(size)
 	-- Create hidden sections for hit-box purposes
@@ -639,7 +645,8 @@ local function hidden_section(size)
 
 	-- Register nodes
 
-	minetest.register_node(":" .. name, def)
+	minetest.register_node(name, def)
+	do_not_move(name)
 end
 
 for _,hidden_size in pairs(hidden_sizes) do
@@ -867,6 +874,11 @@ function bigdoors.register(originalname, config)
 		doors.registered_doors[name .. "_b"] = true
 		doors.registered_doors[name .. "_c"] = true
 		doors.registered_doors[name .. "_d"] = true
+		
+		do_not_move(":" .. name .. "_a")
+		do_not_move(":" .. name .. "_b")
+		do_not_move(":" .. name .. "_c")
+		do_not_move(":" .. name .. "_d")
 	end
 
 	if config.replace_original then
