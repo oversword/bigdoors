@@ -513,10 +513,28 @@ local function on_place (itemstack, placer, pointed_thing)
 			local check_def = check_node and minetest.registered_nodes[check_node.name]
 
 			if not check_def or not check_def.buildable_to then
+				local dir = "around"
+				if check_pos.dir == "next" then
+					dir = "beside"
+				elseif check_pos.dir == "back" then
+					dir = "behind"
+				elseif check_pos.dir == "spine" then
+					dir = "above"
+				end
+				bigdoors.notify(placer, "Door cannot be placed here\nMake sure there is room "..dir.." this position")
 				return itemstack
 			end
 
 			if minetest.is_protected(check_pos, player_name) then
+				local dir = "around"
+				if check_pos.dir == "next" then
+					dir = "beside"
+				elseif check_pos.dir == "back" then
+					dir = "behind"
+				elseif check_pos.dir == "spine" then
+					dir = "above"
+				end
+				bigdoors.notify(placer, "Door cannot be placed here\nThe area "..dir.." the door is protected")
 				return itemstack
 			end
 		end
