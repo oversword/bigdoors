@@ -43,37 +43,56 @@ end
 
 local max_width = 0
 
-for _,w in ipairs(bigdoors.door_widths) do
-	local W = w/10
-	if W > max_width then
-		max_width = W
-	end
-	local wrem = W%1
-	if wrem == 0 then wrem = 1 end
-	for _,h in ipairs(bigdoors.door_heights) do
-		local H = h/10
-		local hrem = H%1
-		if hrem == 0 then hrem = 1 end
-		local hidden_size = { width=wrem, height=hrem }
-		hidden_sizes[size_to_string(hidden_size)] = hidden_size
-		local wr, mw = craft_size(W)
-		local hr, mh = craft_size(H/2)
 
-		local size = {
-			width = W,
-			height = H,
-			recipe = {
-				width = wr,
-				height = hr,
-				output = mw*mh
-			},
-		}
-		size.hitbox = {
-			ad=new_hitbox(size),
-			bc=new_hitbox(size, true)
-		}
-		local size_string = size_to_string(size)
-		door_sizes[size_string] = size
+for _w,w in ipairs(bigdoors.door_widths) do
+	if w >= 100 or w < 1 then
+		local allowed = ", please set value "..tostring(_w).." of bigdoors.door_widths between 1 and 99 inclusive."
+		if w >= 100 then
+			minetest.log("error", "BigDoors: Door sizes cannot exceed 10 nodes"..allowed)
+		else
+			minetest.log("error", "BigDoors: Door sizes cannot be less than 0.1 nodes"..allowed)
+		end
+	else
+		local W = w/10
+		if W > max_width then
+			max_width = W
+		end
+		local wrem = W%1
+		if wrem == 0 then wrem = 1 end
+		for _h,h in ipairs(bigdoors.door_heights) do
+			if h >= 100 or h < 1 then
+				local allowed = ", please set value "..tostring(_h).." of bigdoors.door_heights between 1 and 99 inclusive."
+				if h >= 100 then
+					minetest.log("error", "BigDoors: Door sizes cannot exceed 10 nodes"..allowed)
+				else
+					minetest.log("error", "BigDoors: Door sizes cannot be less than 0.1 nodes"..allowed)
+				end
+			else
+				local H = h/10
+				local hrem = H%1
+				if hrem == 0 then hrem = 1 end
+				local hidden_size = { width=wrem, height=hrem }
+				hidden_sizes[size_to_string(hidden_size)] = hidden_size
+				local wr, mw = craft_size(W)
+				local hr, mh = craft_size(H/2)
+
+				local size = {
+					width = W,
+					height = H,
+					recipe = {
+						width = wr,
+						height = hr,
+						output = mw*mh
+					},
+				}
+				size.hitbox = {
+					ad=new_hitbox(size),
+					bc=new_hitbox(size, true)
+				}
+				local size_string = size_to_string(size)
+				door_sizes[size_string] = size
+			end
+		end
 	end
 end
 local max_pair_distance = (max_width*2)-1
