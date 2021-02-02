@@ -764,12 +764,15 @@ function bigdoors.register(originalname, config)
 		base_name = bigdoors.modname..":" .. base_name
 	end
 
+	local base_size_string = "1020"
+	local bigdoor_base_name = base_name.."_"..base_size_string
+
 	local recipe_name = originalname
 	if config.replace_original then
-		recipe_name = base_name..'_1020'
+		recipe_name = bigdoor_base_name
 	end
 	if config.replace_original then
-		replacement_doors[originalname] = base_name..'_1020'
+		replacement_doors[originalname] = bigdoor_base_name
 	end
 
 	local valid_sizes = door_sizes
@@ -777,7 +780,7 @@ function bigdoors.register(originalname, config)
 		valid_sizes = size_variations(config.variations)
 	end
 
-	if config.replace_original and not valid_sizes["1020"] then
+	if config.replace_original and not valid_sizes[base_size_string] then
 		minetest.log("error", "BigDoors: Cannot replace original door ("..originalname..") if 1x2 size variation is disallowed")
 		return
 	end
@@ -796,7 +799,7 @@ function bigdoors.register(originalname, config)
 		})
 
 		-- Use recipe to create crafts
-		if size_string == "1020" and config.replace_original then
+		if size_string == base_size_string and config.replace_original then
 			minetest.register_craft({
 				output = name,
 				recipe = config.original_recipe,
@@ -824,10 +827,10 @@ function bigdoors.register(originalname, config)
 				output = name..' '..tostring(size.recipe.output),
 				recipe = new_recipe(size.recipe, recipe_name),
 			})
-			if not config.replace_original then
+			if not (config.replace_original or size_string == base_size_string) then
 				minetest.register_craft({
 					output = name..' '..tostring(size.recipe.output),
-					recipe = new_recipe(size.recipe, originalname),
+					recipe = new_recipe(size.recipe, bigdoor_base_name),
 				})
 			end
 		end
@@ -883,9 +886,8 @@ function bigdoors.register(originalname, config)
 
 	if config.replace_original then
 		-- disable original items
-		local swap_name = base_name..'_1020'
-		minetest.registered_craftitems[originalname] = table.copy(minetest.registered_craftitems[swap_name])
-		minetest.registered_items[originalname] = table.copy(minetest.registered_items[swap_name])
+		minetest.registered_craftitems[originalname] = table.copy(minetest.registered_craftitems[bigdoor_base_name])
+		minetest.registered_items[originalname] = table.copy(minetest.registered_items[bigdoor_base_name])
 		minetest.registered_craftitems[originalname].groups.not_in_creative_inventory = 1
 		minetest.registered_items[originalname].groups.not_in_creative_inventory = 1
 		-- replace old doors of this type automatically
@@ -893,7 +895,7 @@ function bigdoors.register(originalname, config)
 			name = ":"..bigdoors.modname..":replace_" .. originalname:gsub(":", "_"),
 			nodenames = {originalname.."_a", originalname.."_b", originalname.."_c", originalname.."_d"},
 			action = function(new_pos, node)
-				local new_door = swap_name..string.sub(node.name,-2)
+				local new_door = bigdoor_base_name..string.sub(node.name,-2)
 				local new_node = {name = new_door, param2 = node.param2}
 				minetest.swap_node(new_pos, new_node)
 				local door = parse_door(nil, new_node)
