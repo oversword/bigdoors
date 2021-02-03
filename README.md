@@ -1,6 +1,8 @@
 # BigDoors #
 > 3-wide and 4-wide double doors for minetest
 
+![All new door variations laid out in a three by three grid, with alternating blocks aroud the border to make it clear how big they are](screenshot.png?raw=true "Big Doors")
+
 ## What does it do? ##
 Provides new models for wider and taller doors, stretching the texture for any existing door into larger sizes.
 Doors can be 1 block, 1 and a half blocks, or 2 blocks wide, and can be 2, 3 or 4 blocks tall. This provides the ability to cover larger spaces with double doors, and also provides large doors for grander builds.
