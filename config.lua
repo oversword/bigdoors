@@ -67,6 +67,18 @@ bigdoors.variations.sizes = ( ( 1, 2 ), ( 1.5, 2 ), ( 2, 2 ), ( 1, 3 ), ( 1.5, 3
 
 ]]
 
+local function merge_table(def, new)
+	for k,v in pairs(new) do
+		-- If key-value table, recurse
+		if type(v) == 'table' and #v == 0 and type(def[k]) == 'table' and #def[k] == 0 then
+			def[k] = merge_table(def[k], v)
+		else -- else just overwrite
+			def[k] = v
+		end
+	end
+	return def
+end
+
 local function parse_table(str)
 	if not str then return end
 	str = string.gsub(str, '%(', '{')
@@ -105,20 +117,7 @@ local default = {
 	replace_original=replace_original,
 	variations = variations
 }
-local function merge_table(def, new)
-	for k,v in pairs(new) do
-		-- If key-value table, recurse
-		if type(v) == 'table' and #v == 0 and type(def[k]) == 'table' and #def[k] == 0 then
-			def[k] = merge_table(def[k], v)
-		else -- else just overwrite
-			def[k] = v
-		end
-	end
-	return def
-end
 
 bigdoors.merge_config = function (config)
-	local ret = merge_table(table.copy(default), config)
-	minetest.log("error", minetest.serialize(ret))
-	return ret
+	return merge_table(table.copy(default), config)
 end
