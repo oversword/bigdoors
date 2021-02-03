@@ -411,6 +411,10 @@ local function on_rightclick(pos, node, clicker, itemstack, pointed_thing)
 	return itemstack
 end
 
+local function mesecon_toggle(pos,node,signal_pos)
+	on_rightclick(pos,node)
+end
+
 local function after_dig_node (pos, node, meta, digger)
 	local pair_pos = unpair(pos, meta.fields.pair)
 
@@ -865,6 +869,14 @@ function bigdoors.register(originalname, config)
 		def.on_destruct = on_destruct
 		if not def.protected then
 			def.on_blast = on_blast_unprotected
+		end
+
+		if minetest.global_exists("mesecon") then
+			def.mesecons = {effector = {
+				action_on = mesecon_toggle,
+				action_off = mesecon_toggle,
+				rules = mesecon.rules.pplate
+			}}
 		end
 
 		-- Model and hitbox
