@@ -896,10 +896,10 @@ function bigdoors.register(originalname, config)
 		doors.registered_doors[name .. "_c"] = true
 		doors.registered_doors[name .. "_d"] = true
 		
-		do_not_move(":" .. name .. "_a")
-		do_not_move(":" .. name .. "_b")
-		do_not_move(":" .. name .. "_c")
-		do_not_move(":" .. name .. "_d")
+		do_not_move(name .. "_a")
+		do_not_move(name .. "_b")
+		do_not_move(name .. "_c")
+		do_not_move(name .. "_d")
 	end
 end
 
