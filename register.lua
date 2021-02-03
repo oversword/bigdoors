@@ -815,7 +815,7 @@ function bigdoors.register(originalname, config)
 		-- Create item
 		minetest.register_craftitem(":" .. name, {
 			description = baseitem.description .. ' (' .. tostring(size.width) .. ' x ' .. tostring(size.height) .. ')',
-			inventory_image = baseitem.inventory_image,
+			inventory_image = baseitem.inventory_image.."^bigdoors_item_"..size_string.."_overlay_large.png",
 			groups = table.copy(baseitem.groups),
 			on_place = on_place
 		})
