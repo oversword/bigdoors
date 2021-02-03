@@ -769,10 +769,7 @@ function bigdoors.register(originalname, config)
 		config = {}
 	end
 
-	if config.replace_original and not config.original_recipe then
-		minetest.log("error", "BigDoors: Cannot replace original door ("..originalname..") if original_recipe is not defined. (Recipes cannot be retrieved from the minetest API)")
-		return
-	end
+	config = bigdoors.merge_config(config)
 
 	local base_name = originalname
 	if config.name then
@@ -785,14 +782,6 @@ function bigdoors.register(originalname, config)
 	local base_size_string = "1020"
 	local bigdoor_base_name = base_name.."_"..base_size_string
 
-	local recipe_name = originalname
-	if config.replace_original then
-		recipe_name = bigdoor_base_name
-	end
-	if config.replace_original then
-		replacement_doors[originalname] = bigdoor_base_name
-	end
-
 	local valid_sizes = door_sizes
 	if config.variations then
 		valid_sizes = size_variations(config.variations)
@@ -801,6 +790,17 @@ function bigdoors.register(originalname, config)
 	if config.replace_original and not valid_sizes[base_size_string] then
 		minetest.log("error", "BigDoors: Cannot replace original door ("..originalname..") if 1x2 size variation is disallowed")
 		return
+	end
+
+	local recipe_name = originalname
+	if config.replace_original then
+		recipe_name = bigdoor_base_name
+		replacement_doors[originalname] = bigdoor_base_name
+		minetest.register_alias_force(originalname, bigdoor_base_name)
+		minetest.register_alias_force(originalname..'_a', bigdoor_base_name..'_a')
+		minetest.register_alias_force(originalname..'_b', bigdoor_base_name..'_b')
+		minetest.register_alias_force(originalname..'_c', bigdoor_base_name..'_c')
+		minetest.register_alias_force(originalname..'_d', bigdoor_base_name..'_d')
 	end
 
 	for size_string, size in pairs(valid_sizes) do
@@ -817,12 +817,7 @@ function bigdoors.register(originalname, config)
 		})
 
 		-- Use recipe to create crafts
-		if size_string == base_size_string and config.replace_original then
-			minetest.register_craft({
-				output = name,
-				recipe = config.original_recipe,
-			})
-		elseif config.recipe then
+		if config.recipe then
 			-- TODO: multiple recipes for each size?
 			local recipe = config.recipe[size_string]
 			if recipe then
@@ -906,27 +901,5 @@ function bigdoors.register(originalname, config)
 		do_not_move(":" .. name .. "_c")
 		do_not_move(":" .. name .. "_d")
 	end
-
-	if config.replace_original then
-		-- disable original items
-		minetest.registered_craftitems[originalname] = table.copy(minetest.registered_craftitems[bigdoor_base_name])
-		minetest.registered_items[originalname] = table.copy(minetest.registered_items[bigdoor_base_name])
-		minetest.registered_craftitems[originalname].groups.not_in_creative_inventory = 1
-		minetest.registered_items[originalname].groups.not_in_creative_inventory = 1
-		-- replace old doors of this type automatically
-		minetest.register_lbm({
-			name = ":"..bigdoors.modname..":replace_" .. originalname:gsub(":", "_"),
-			nodenames = {originalname.."_a", originalname.."_b", originalname.."_c", originalname.."_d"},
-			action = function(new_pos, node)
-				local new_door = bigdoor_base_name..string.sub(node.name,-2)
-				local new_node = {name = new_door, param2 = node.param2}
-				minetest.swap_node(new_pos, new_node)
-				local door = parse_door(nil, new_node)
-				local check_nodes = door_occupies(new_pos, door)
-				swap_nodes(check_nodes, door, not door.closed)
-			end
-		})
-	end
-
 end
 
