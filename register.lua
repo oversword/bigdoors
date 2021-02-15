@@ -15,7 +15,6 @@ end
 
 function bigdoors.register(originalname, config)
 
-	local basedef = minetest.registered_nodes[originalname..'_a']
 	local baseitem = minetest.registered_craftitems[originalname]
 	
 	if not config then
@@ -103,61 +102,48 @@ function bigdoors.register(originalname, config)
 			end
 		end
 
-		local def = table.copy(basedef)
-		def.drop = name
-		def.door.name = name
-
-
-		-- Callbacks
-		def.on_rightclick = bigdoors.actions.on_rightclick
-
-		def.after_dig_node = bigdoors.actions.after_dig_node
-		def.on_destruct = bigdoors.actions.on_destruct
-		if not def.protected then
-			def.on_blast = bigdoors.actions.on_blast_unprotected
-		end
-
-		if minetest.global_exists("mesecon") then
-			def.mesecons = {effector = {
-				action_on = bigdoors.actions.mesecon_toggle,
-				action_off = bigdoors.actions.mesecon_toggle,
-				rules = mesecon.rules.pplate
-			}}
-		end
 
 		-- Model and hitbox
 
-		-- TODO: replace by_value
-		local defa = by_value(def)
-		local defb = by_value(def)
-		local defc = by_value(def)
-		local defd = by_value(def)
+		for _,variation in ipairs({'a','b','c','d'}) do
+			local variation_name = name .. "_" .. variation
 
-		defa.selection_box = {type = "fixed", fixed = size.hitbox.ad}
-		defb.selection_box = {type = "fixed", fixed = size.hitbox.bc}
-		defc.selection_box = {type = "fixed", fixed = size.hitbox.bc}
-		defd.selection_box = {type = "fixed", fixed = size.hitbox.ad}
+			local basedef = minetest.registered_nodes[originalname .. "_" .. variation]
 
-		defa.mesh = "bigdoor_a"..size_string..".obj"
-		defb.mesh = "bigdoor_b"..size_string..".obj"
-		defc.mesh = "bigdoor_c"..size_string..".obj"
-		defd.mesh = "bigdoor_d"..size_string..".obj"
+			local def = table.copy(basedef)
 
-		-- Register nodes
-		minetest.register_node(":" .. name .. "_a", defa)
-		minetest.register_node(":" .. name .. "_b", defb)
-		minetest.register_node(":" .. name .. "_c", defc)
-		minetest.register_node(":" .. name .. "_d", defd)
+			-- Callbacks
+			def.on_rightclick = bigdoors.actions.on_rightclick
 
-		doors.registered_doors[name .. "_a"] = true
-		doors.registered_doors[name .. "_b"] = true
-		doors.registered_doors[name .. "_c"] = true
-		doors.registered_doors[name .. "_d"] = true
-		
-		bigdoors.api.do_not_move(name .. "_a")
-		bigdoors.api.do_not_move(name .. "_b")
-		bigdoors.api.do_not_move(name .. "_c")
-		bigdoors.api.do_not_move(name .. "_d")
+			def.after_dig_node = bigdoors.actions.after_dig_node
+			def.on_destruct = bigdoors.actions.on_destruct
+			if not def.protected then
+				def.on_blast = bigdoors.actions.on_blast_unprotected
+			end
+
+			if minetest.global_exists("mesecon") then
+				def.mesecons = {effector = {
+					action_on = bigdoors.actions.mesecon_toggle,
+					action_off = bigdoors.actions.mesecon_toggle,
+					rules = mesecon.rules.pplate
+				}}
+			end
+
+			def.drop = name
+			def.door.name = name
+
+			if size_string ~= base_size_string then
+				def.selection_box = {type = "fixed", fixed = size.hitbox[variation]}
+				def.mesh = "bigdoor_"..variation..size_string..".obj"
+			end
+
+			-- Register nodes
+			minetest.register_node(":" .. variation_name, def)
+
+			doors.registered_doors[variation_name] = true
+			
+			bigdoors.api.do_not_move(variation_name)
+		end
 	end
 end
 

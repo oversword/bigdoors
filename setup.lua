@@ -57,9 +57,13 @@ for _w,w in ipairs(bigdoors.config.door_widths) do
 						output = mw*mh
 					},
 				}
+				local hit_ad = bigdoors.api.new_hitbox(size)
+				local hit_bc = bigdoors.api.new_hitbox(size)
 				size.hitbox = {
-					ad=bigdoors.api.new_hitbox(size),
-					bc=bigdoors.api.new_hitbox(size, true)
+					a=hit_ad,
+					b=hit_bc,
+					c=hit_bc,
+					d=hit_ad
 				}
 				local size_string = bigdoors.api.size_to_string(size)
 				door_sizes[size_string] = size
