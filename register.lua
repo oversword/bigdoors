@@ -1,18 +1,4 @@
 
-local function by_value( t1 )
-	local t2 = { }
-	if #t1 > 0 then
-		-- ordered copy of arrays
-		t2 = { unpack( t1 ) }
-	else
-		-- shallow copy of hashes
-		for k, v in pairs( t1 ) do
-			t2[ k ] = v
-		end
-	end
-	return t2
-end
-
 function bigdoors.register(originalname, config)
 
 	local baseitem = minetest.registered_craftitems[originalname]
@@ -46,10 +32,6 @@ function bigdoors.register(originalname, config)
 		recipe_name = bigdoor_base_name
 		bigdoors.data.replacement_doors[originalname] = bigdoor_base_name
 		minetest.register_alias_force(originalname, bigdoor_base_name)
-		minetest.register_alias_force(originalname..'_a', bigdoor_base_name..'_a')
-		minetest.register_alias_force(originalname..'_b', bigdoor_base_name..'_b')
-		minetest.register_alias_force(originalname..'_c', bigdoor_base_name..'_c')
-		minetest.register_alias_force(originalname..'_d', bigdoor_base_name..'_d')
 	end
 
 	for size_string, size in pairs(valid_sizes) do
@@ -105,10 +87,10 @@ function bigdoors.register(originalname, config)
 
 		-- Model and hitbox
 
-		for _,variation in ipairs({'a','b','c','d'}) do
+		for _,variation in ipairs(bigdoors.data.variants) do
 			local variation_name = name .. "_" .. variation
 
-			local basedef = minetest.registered_nodes[originalname .. "_" .. variation]
+			local basedef = minetest.registered_nodes[originalname .. '_' .. variation]
 
 			local def = table.copy(basedef)
 
@@ -144,6 +126,14 @@ function bigdoors.register(originalname, config)
 			
 			bigdoors.api.do_not_move(variation_name)
 		end
+	end
+
+	if config.replace_original then
+		-- Make sure to register aliases AFTER copying their info from registered_nodes
+		minetest.register_alias_force(originalname..'_a', bigdoor_base_name..'_a')
+		minetest.register_alias_force(originalname..'_b', bigdoor_base_name..'_b')
+		minetest.register_alias_force(originalname..'_c', bigdoor_base_name..'_c')
+		minetest.register_alias_force(originalname..'_d', bigdoor_base_name..'_d')
 	end
 end
 

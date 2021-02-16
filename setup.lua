@@ -58,7 +58,7 @@ for _w,w in ipairs(bigdoors.config.door_widths) do
 					},
 				}
 				local hit_ad = bigdoors.api.new_hitbox(size)
-				local hit_bc = bigdoors.api.new_hitbox(size)
+				local hit_bc = bigdoors.api.new_hitbox(size, true)
 				size.hitbox = {
 					a=hit_ad,
 					b=hit_bc,
@@ -164,5 +164,6 @@ end
 bigdoors.data = {
 	max_pair_distance = max_pair_distance,
 	replacement_doors = replacement_doors,
-	door_sizes = door_sizes
+	door_sizes = door_sizes,
+	variants = {'a','b','c','d'}
 }
