@@ -1,4 +1,3 @@
 default
 doors
 mesecon?
-homedecor_3d_extras?
