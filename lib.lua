@@ -462,7 +462,7 @@ local function on_place (itemstack, placer, pointed_thing)
 				return itemstack
 			end
 
-			if minetest.is_protected(check_pos, player_name) then
+			if minetest.is_protected(check_pos.pos, player_name) then
 				local dir = "around"
 				if check_pos.dir == "next" then
 					dir = "beside"
